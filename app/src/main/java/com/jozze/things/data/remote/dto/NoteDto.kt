@@ -3,17 +3,20 @@ package com.jozze.things.data.remote.dto
 import com.jozze.core.common.log
 import com.jozze.things.domain.model.Note
 import com.jozze.things.domain.model.ThingWrapper
-import com.squareup.moshi.JsonClass
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapter
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 
-@JsonClass(generateAdapter = true)
+@kotlinx.serialization.Serializable
 class NoteRequestDto(
     override val name: String,
     override val data: ThingWrapper<Note>
 ) : ThingDto<Note>()
 
-@JsonClass(generateAdapter = true)
+@kotlinx.serialization.Serializable
 class NoteResponseDto(
     override val id: String,
     override val createdAt: String,
@@ -37,27 +40,18 @@ val json = """
     }
 """.trimIndent()
 
-//val modules = SerializersModule {
-//    polymorphic(ThingDto::class) {
-//        subclass(ThingResponseDto::class)
-//    }
-//}
+val modules = SerializersModule {
+    polymorphic(ThingDto::class) {
+        subclass(ThingResponseDto::class)
+    }
+}
 
-@OptIn(ExperimentalStdlibApi::class)
 fun main() {
-/*
-    val parser = Json { serializersModule = modules }
-
+    val parser = Json { modules = modules }
 //    val noteDto = Json.decodeFromString<NoteResponseDto>(json)
-    val noteDto = parser.decodeFromString<ThingResponseDto<Note>>(json)
-
+    val noteDto = Json.decodeFromString<ThingResponseDto<Note>>(json)
+    Note.serializer()
 //    val noteDto = ParseUtil.objectify<ThingResponseDto<Note>>(json)
-    val noteJsonString = parser.encodeToString(noteDto)
-    log(noteJsonString)
-*/
-
-    val moshi = Moshi.Builder().build()
-    val noteDto = moshi.adapter<TestModel>().fromJson(json)
-    val noteJsonString = moshi.adapter<TestModel>().toJson(noteDto)
+    val noteJsonString = Json.encodeToString(noteDto)
     log(noteJsonString)
 }
